@@ -1,0 +1,211 @@
+create database miniproject;
+show databases;
+use miniproject;
+
+alter table customer modify email varchar(50);
+
+alter table customer  rename column id to customerid;
+
+update customer set customerid =1 where customerid=7;
+
+show tables;
+desc customer;
+drop table customer;
+drop table bill;
+drop table payment;
+alter table customer auto_increment =1;
+delete from customer;
+SET SQL_SAFE_UPDATES = 0;
+
+select *from customer;
+alter table meter auto_increment =1;
+delete from meter;
+delete from electricityusage;
+delete from bill;
+delete from payment;
+
+create table Customer(
+CustomerId int auto_increment Primary Key,
+ Name varchar(100) Not Null , 
+ Address varchar (100) Not Null,
+ PhoneNumber varchar(20) Not Null ,
+ Email varchar(20)  not null unique);
+
+create table Meter( 
+Meterid int auto_increment primary key ,
+ CustomerId int not null, 
+ InstallationDate date not null, 
+ lastreadingdate date not null,
+ foreign key  (customerid) references customer(customerid) on delete cascade);
+ 
+ create table electricityusage ( 
+ usageid int auto_increment primary key,
+ meterid int not null,
+ Readingdate date not null,
+ usageunits decimal(10,2) not null check(usageunits >=0),
+ foreign key(meterid ) references meter(meterid ) on delete cascade);
+ 
+ 
+ select *from electricityusage;
+ select *from bill; 
+  select *from payment; 
+ 
+ 
+ create table bill(
+ billid int auto_increment primary key , 
+ meterid int not null, 
+ billdate date not null,
+ amountdue decimal(10,2) not null check (amountdue >=0),
+ duedate date not null,
+ paid tinyint not null default 0, 
+ foreign key (meterid ) references meter(meterid ) on delete cascade);
+ 
+ create table payment (
+ paymentid int auto_increment primary key ,
+ billid int not null ,
+ paymentdate date not null ,
+ amountpaid decimal(10,2) not null check (amountpaid >= 0),
+ foreign key (billid) references bill(billid) on delete cascade );
+ 
+ INSERT INTO Customer (Name, Address, PhoneNumber, Email) VALUES
+('Asha Rao', '12 Green Street, Pune', '9876543210', 'asha.rao@example.com'),
+('Ravi Kumar', '45 Lake Rd, Bangalore', '9845123456', 'ravi.kumar@example.com'),
+('Meera Shah', '101 River Ave, Mumbai', '9966334455', 'meera.shah@example.com'),
+('John Doe', '22 Park Lane, Delhi', '9998887776', 'john.doe@example.com'),
+('Sana Ali', '77 Hill St, Chennai', '9001122334', 'sana.ali@example.com');
+
+
+INSERT INTO Meter (CustomerId, InstallationDate, LastReadingDate) VALUES
+(1, '2022-05-10', '2025-03-30'),
+(2, '2021-11-20', '2025-03-28'),
+(3, '2024-01-15', '2025-04-01'),
+(4, '2020-07-05', '2025-03-20'),
+(5, '2023-12-02', '2025-03-25'),
+(1, '2024-06-01', '2025-03-31'), 
+(2, '2025-02-05', '2025-04-02'); 
+
+select * from meter;
+INSERT INTO ElectricityUsage (MeterId, ReadingDate, UsageUnits) VALUES
+(1,'2025-03-01', 120.50),
+(1,'2025-03-31', 95.75),
+(1,'2025-04-30', 210.00),
+(2,'2025-03-05', 80.00),
+(2,'2025-04-05', 150.00),
+(3,'2025-03-20', 250.00),
+(3,'2025-04-20', 260.00),
+(4,'2025-03-10', 60.00),
+(4,'2025-04-10', 75.00),
+(5,'2025-03-15', 220.40),
+(6,'2025-03-25', 30.00),
+(6,'2025-04-25', 40.00),
+(7,'2025-03-28', 300.00),
+(2,'2025-03-31', 95.00),
+(5,'2025-04-15', 10.00);
+
+INSERT INTO Bill (MeterId, BillDate, AmountDue, DueDate, Paid) VALUES
+(1,'2025-03-31', 1500.00, '2025-04-15', 0),
+(2,'2025-03-31', 900.00, '2025-04-10', 1),
+(3,'2025-04-01', 3000.00, '2025-04-20', 0),
+(4,'2025-03-20', 600.00, '2025-04-05', 1),
+(5,'2025-03-25', 2200.50, '2025-04-12', 0),
+(6,'2025-03-31', 100.00, '2025-04-10', 0),
+(7,'2025-04-02', 3500.00, '2025-04-25', 0),
+(1,'2025-04-30', 1800.00, '2025-05-15', 0),
+(2,'2025-04-05', 1100.00, '2025-04-25', 1),
+(3,'2025-04-30', 500.00, '2025-05-20', 0);
+
+
+INSERT INTO Payment (BillId, PaymentDate, AmountPaid) VALUES
+(2,'2025-04-02',900.00),
+(4,'2025-03-25',600.00),
+(9,'2025-04-10',1100.00),
+(1,'2025-04-20',500.00),  
+(1,'2025-04-25',1000.00), 
+(6,'2025-04-12',100.00);
+ show tables;
+ 
+
+ 
+select * from meter;
+select * from customer;
+select * from payment;
+select * from bill;
+select * from electricityusage;
+
+
+SELECT
+  c.CustomerId, c.Name, c.Email,
+  m.MeterId, m.InstallationDate, m.LastReadingDate,
+  b.BillId, b.BillDate, b.AmountDue, b.DueDate, b.Paid,
+  IFNULL(SUM(p.AmountPaid), 0) AS TotalPaymentsForBill
+FROM Bill b
+JOIN Meter m ON b.MeterId = m.MeterId
+JOIN Customer c ON m.CustomerId = c.CustomerId
+LEFT JOIN Payment p ON p.BillId = b.BillId
+GROUP BY b.BillId;
+
+
+
+SELECT
+  eu.MeterId,
+  SUM(eu.UsageUnits) AS TotalUsage
+FROM ElectricityUsage eu
+GROUP BY eu.MeterId
+HAVING SUM(eu.UsageUnits) > 200
+ORDER BY TotalUsage DESC;
+
+SELECT
+  c.CustomerId,
+  c.Name,
+  IFNULL(SUM(b.AmountDue), 0) AS TotalUnpaidAmount
+FROM Customer c
+LEFT JOIN Meter m ON m.CustomerId = c.CustomerId
+LEFT JOIN Bill b ON b.MeterId = m.MeterId AND b.Paid = 0
+GROUP BY c.CustomerId
+ORDER BY TotalUnpaidAmount DESC;
+
+
+
+SELECT
+  b.BillId,
+  b.BillDate,
+  b.MeterId,
+  b.AmountDue,
+  IFNULL(SUM(p.AmountPaid),0) AS TotalPaid,
+  (b.AmountDue - IFNULL(SUM(p.AmountPaid),0)) AS OutstandingAmount,
+  CASE WHEN b.Paid = 1 THEN 'PAID' ELSE 'UNPAID' END AS PaymentStatus
+FROM Bill b
+LEFT JOIN Payment p ON p.BillId = b.BillId
+GROUP BY b.BillId
+ORDER BY b.BillDate ASC;
+
+SELECT DISTINCT c.CustomerId, c.Name, c.Email
+FROM Customer c
+JOIN Meter m ON m.CustomerId = c.CustomerId
+WHERE m.InstallationDate > '2023-12-31';
+
+SELECT
+  m.MeterId,
+  m.LastReadingDate,
+  IFNULL(SUM(eu.UsageUnits), 0) AS TotalUsage
+FROM Meter m
+LEFT JOIN ElectricityUsage eu ON eu.MeterId = m.MeterId
+GROUP BY m.MeterId, m.LastReadingDate
+ORDER BY TotalUsage DESC;
+
+
+
+
+
+
+
+UPDATE Bill b
+JOIN (
+  SELECT BillId, SUM(AmountPaid) AS TotalPaid
+  FROM Payment
+  GROUP BY BillId
+) pay ON pay.BillId = b.BillId
+SET b.Paid = 1
+WHERE pay.TotalPaid >= b.AmountDue;
+
+rollback;
